@@ -1,0 +1,99 @@
+{
+    "variant_specific": {
+        "DUT_1": {
+            "features":  {
+                "artifact_harvesting_tries": 3,
+                "documentation_linkage_validation": true,
+                "sose_handling": false
+            },
+            "resource": "PROJECT_KEY__UID_RACK_XXXX_BOX_XXXX",
+            "agent": {
+                "OVERNIGHT": {
+                  "TEST_TYPE": ["FUNCTIONAL"],
+                  "STATUS": ["RUNABLE"],
+                  "AGENT": false,
+                  "TIME_BUDGET": 6
+                },
+                "SMOKE": {
+                  "TEST_TYPE": ["FUNCTIONAL"],
+                  "STATUS": ["RUNABLE"],
+                  "AGENT": false,
+                  "TIME_BUDGET": 1
+                }
+            },
+            "notification": {
+                "OVERNIGHT": {
+                    "TEST_TYPE": [
+                        "FUNCTIONAL"
+                    ],
+                    "STATUS": [
+                        "RUNABLE"
+                    ],
+                    "RECEIVER": []
+                }
+            }
+        },
+        "DUT_2": {
+            "features":  {
+                "artifact_harvesting_tries": 3,
+                "documentation_linkage_validation": true,
+                "sose_handling": false
+            },
+            "resource": "PROJECT_KEY__UID_RACK_XXXX_BOX_XXXX",
+            "agent": {
+                "WEEKEND": {
+                  "TEST_TYPE": ["ROBUSTNESS"],
+                  "STATUS": ["RUNABLE"],
+                  "AGENT": true,
+                  "TIME_BUDGET": 10
+                }
+            },
+            "notification": {
+                "OVERNIGHT": {
+                      "TEST_TYPE": ["FUNCTIONAL", "STRESS", "ROBUSTNESS"],
+                      "STATUS": ["RUNABLE", "BUGS", "BROKEN"],
+                      "RECEIVER": ["stakeholder.somebody@bshg.com"]
+                },
+                "SMOKE": {
+                      "TEST_TYPE": ["FUNCTIONAL", "STRESS", "ROBUSTNESS"],
+                      "STATUS": ["RUNABLE", "BUGS", "BROKEN"],
+                      "RECEIVER": ["stakeholder.somebody@bshg.com"]
+                }
+            }
+        }
+    },
+    "project_specific": {
+        "brsdd_artifactory": {
+            "credentials_id": "credentials_id_of_your_jenkins",
+            "credentials_type": "user_and_password",
+            "user": "your_username"
+        },
+        "bdc_artifactory": {
+            "host": "https://artifactory-04.boschdevcloud.com/artifactory",
+            "repository": "your_repository",
+            "credentials_id": "credentials_id_of_your_jenkins",
+            "credentials_type": "user_and_password",
+            "user": "your_username"
+        },
+        "auth_sql": {
+            "credentials_id": "credentials_id_of_your_jenkins",
+            "credentials_type": "user_and_password"
+        },
+        "loglevel_cli": {
+            "OVERNIGHT": "INFO",
+            "WEEKEND": "INFO",
+            "SMOKE": "WARNING",
+            "MASTER": "WARNING",
+            "PLAYGROUND": "DEBUG",
+            "EXPERIMENTAL": "INFO"
+        },
+        "loglevel_file": {
+            "OVERNIGHT": "INFO",
+            "WEEKEND": "INFO",
+            "SMOKE": "WARNING",
+            "MASTER": "WARNING",
+            "PLAYGROUND": "DEBUG",
+            "EXPERIMENTAL": "INFO"
+        }
+    }
+}

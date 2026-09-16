@@ -1,0 +1,17 @@
+{
+  "project": "TST_%YOUR_TEST_OPERATION_KEY%",
+  "github_repository": "https://github-bshg.boschdevcloud.com/%YOUR_ORGANIZATIONAL_ORGANIZATION%/TST_%YOUR_TEST_OPERATION_KEY%",
+  "jenkins_master": "https://masterblender-mbcs1.cs.boschdevcloud.com/your_organisation/",
+  "credentials_id": "%your_credentials_id",
+  "admin_user": "bsh-ci-%your_organizational_master_admin_user%",
+  "variants": [
+      "BOSCH",
+      "SIEMENS"
+    ],
+  "node_labels": {
+    "PULL_REQUEST_CHECKER": "UID_RACK_XXXX",
+    "BOSCH": "UID_RACK_XXXX",
+    "SIEMENS": "UID_RACK_XXXX"
+  },
+  "default_test": "tests/%your_default_test%"
+}

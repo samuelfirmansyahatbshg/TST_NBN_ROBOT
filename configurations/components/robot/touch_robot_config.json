@@ -1,0 +1,5 @@
+{
+  "robot_coordinates": {"left": 0, "right": 400, "top": 100, "bottom": 0},
+  "target_coordinates": {"left": 0, "right": 400, "top": 100, "bottom": 0},
+  "stroke": 47.0
+}

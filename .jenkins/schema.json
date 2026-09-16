@@ -1,0 +1,280 @@
+{
+  "$id": "bsh.testing-template.pipeline.v2024.1.0",
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "additionalProperties": false,
+  "properties": {
+    "variant_specific": {
+      "description": "Variant specific configurations",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "/": {}
+      },
+      "patternProperties": {
+        "^[A-Z0-9_]+$": {
+          "description": "Variant specific configuration",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "features": {
+              "description": "Status definitions of features",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "artifact_harvesting_tries": {
+                  "description": "Status of artifact harvesting sequence. 0 = deactivated",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "documentation_linkage_validation": {
+                  "description": "Status of documentation linkage validation sequence via req-val",
+                  "type": "boolean"
+                },
+                "sose_handling": {
+                  "description": "Status of sose handling sequence",
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "artifact_harvesting_tries",
+                "documentation_linkage_validation",
+                "sose_handling"
+              ]
+            },
+            "resource": {
+              "description": "Name of allocated hardware resource",
+              "type": "string",
+              "pattern": "^[A-Z0-9_]*$"
+            },
+            "agent": {
+              "description": "Agent behaviour configuration",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "/": {}
+              },
+              "patternProperties": {
+                "^(SMOKE|OVERNIGHT|WEEKEND|COMPLETE)$": {
+                  "description": "Guard of intensity",
+                  "type": "object",
+                  "properties": {
+                    "TEST_TYPE": {
+                      "description": "Guard of test types",
+                      "type": "array",
+                      "items": {
+                        "description": "Definition of test types",
+                        "type": "string",
+                        "enum": [
+                          "FUNCTIONAL",
+                          "STRESS",
+                          "ROBUSTNESS",
+                          "COMPATIBILITY",
+                          "SECURITY"
+                        ]
+                      }
+                    },
+                    "STATUS": {
+                      "description": "Guard of status",
+                      "type": "array",
+                      "items": {
+                        "description": "Definition of status",
+                        "type": "string",
+                        "enum": [
+                          "RUNABLE",
+                          "BROKEN",
+                          "BUGS"
+                        ]
+                      }
+                    },
+                    "AGENT": {
+                      "description": "Status of agent",
+                      "type": "boolean"
+                    },
+                    "TIME_BUDGET": {
+                      "description": "Time budget of agent",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "notification": {
+              "description": "Notification behaviour configuration",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "/": {}
+              },
+              "patternProperties": {
+                "^(SMOKE|OVERNIGHT|WEEKEND|COMPLETE)$": {
+                  "description": "Guard of intensity",
+                  "type": "object",
+                  "properties": {
+                    "TEST_TYPE": {
+                      "description": "Guard of test types",
+                      "type": "array",
+                      "items": {
+                        "description": "Definition of test types",
+                        "type": "string",
+                        "enum": [
+                          "FUNCTIONAL",
+                          "STRESS",
+                          "ROBUSTNESS",
+                          "COMPATIBILITY",
+                          "SECURITY",
+                          "UNASSIGNED"
+                        ]
+                      }
+                    },
+                    "STATUS": {
+                      "description": "Guard of status",
+                      "type": "array",
+                      "items": {
+                        "description": "Definition of status",
+                        "type": "string",
+                        "enum": [
+                          "RUNABLE",
+                          "BROKEN",
+                          "BUGS",
+                          "UNASSIGNED"
+                        ]
+                      }
+                    },
+                    "RECEIVER": {
+                      "description": "Definition of email receivers",
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "features",
+            "resource",
+            "agent",
+            "notification"
+          ]
+        }
+      }
+    },
+    "project_specific": {
+      "description": "Project specific configurations",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "/": {}
+      },
+      "patternProperties": {
+        "^[a-z0-9_]+artifactory$": {
+          "description": "Project specific configuration",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "host": {
+              "description": "Artifactory host",
+              "type": "string",
+              "pattern": ".*"
+            },
+            "repository": {
+              "description": "Artifactory repository to upload or harvest from",
+              "type": "string",
+              "pattern": ".*"
+            },
+            "credentials_id": {
+              "description": "Artifactory credentials id from jenkins",
+              "type": "string",
+              "pattern": ".*"
+            },
+            "credentials_type": {
+              "description": "Artifactory credentials id from jenkins",
+              "type": "string",
+              "pattern": "(token|user_and_password)"
+            },
+            "user": {
+              "description": "Artifactory credentials id from jenkins",
+              "type": "string",
+              "pattern": ".*"
+            }
+          },
+          "required": [
+            "credentials_id",
+            "credentials_type",
+            "user"
+          ]
+        },
+        "auth_sql": {
+          "description": "Jenkins or auth configuration",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "credentials_id": {
+              "description": "Artifactory credentials id from jenkins",
+              "type": "string",
+              "pattern": ".*"
+            },
+            "credentials_type": {
+              "description": "Artifactory credentials id from jenkins",
+              "type": "string",
+              "pattern": "(token|user_and_password)"
+            }
+          },
+          "required": [
+            "credentials_id",
+            "credentials_type"
+          ]
+        },
+        "loglevel_cli": {
+          "$ref": "#/$defs/logging"
+        },
+        "loglevel_file": {
+          "$ref": "#/$defs/logging"
+        }
+      },
+      "required": [
+        "loglevel_cli",
+        "loglevel_file"
+      ]
+    }
+  },
+  "required": [
+    "project_specific",
+    "variant_specific"
+  ],
+  "$defs": {
+    "logging": {
+      "description": "Configurable log level for different intensities",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "OVERNIGHT": { "$ref": "#/$defs/loglevel" },
+        "WEEKEND": { "$ref": "#/$defs/loglevel" },
+        "SMOKE": { "$ref": "#/$defs/loglevel" },
+        "MASTER": { "$ref": "#/$defs/loglevel" },
+        "PLAYGROUND": { "$ref": "#/$defs/loglevel" },
+        "EXPERIMENTAL": { "$ref": "#/$defs/loglevel" }
+      },
+      "required": [
+        "OVERNIGHT",
+        "WEEKEND",
+        "SMOKE",
+        "MASTER",
+        "PLAYGROUND",
+        "EXPERIMENTAL"
+      ]
+    },
+    "loglevel": {
+      "type": "string",
+      "enum": [
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL"
+      ]
+    }
+  }
+}

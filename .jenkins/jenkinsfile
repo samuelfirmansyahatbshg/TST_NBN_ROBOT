@@ -1,0 +1,39 @@
+if (params.NODE_LABEL == null) {
+    env.NODE_LABEL = "YOUR_DEFAULT_NODE"
+}
+else {
+    env.NODE_LABEL = params.NODE_LABEL
+}
+
+node("${env.NODE_LABEL}") {
+  stage('Checkout and set agent') {
+     def now = new Date()
+     env.BUILD_NUMBER = now.format("yyyy-MM-dd'T'HH.mm.ss.SSSZ")
+
+     checkout scm
+     load '.jenkins/subroutines/check_os.groovy'
+     load '.jenkins/subroutines/assignments.groovy'
+  }
+  if (env.OS_Info == "windows") {
+    if (env.pBranch == "PULL_REQUEST_CHECKER") {
+        load '.jenkins/pull_request_checker_windows.jenkinsfile'
+    }
+    else {
+        load '.jenkins/testing_windows.jenkinsfile'
+    }
+  }
+  else {
+    docker_image_json = readJSON file: 'docker_container_version.json', returnPojo: true
+    USED_IMAGE = docker_image_json["image_name"] + ":" + docker_image_json["image_version"]
+    DOCKER_CREDENTIALS_ID = docker_image_json["docker_credential_id"]
+    if (env.pBranch == "PULL_REQUEST_CHECKER") {
+        load '.jenkins/pull_request_checker_linux.jenkinsfile'
+    }
+    else if (env.pBranch == "DOCKER_IMAGES") {
+        load '.jenkins/docker_build.jenkinsfile'
+    }
+    else {
+        load '.jenkins/testing_linux.jenkinsfile'
+    }
+  }
+}

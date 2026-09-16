@@ -1,0 +1,38 @@
+pipeline {
+      agent none
+    options {
+        timestamps ()
+    }
+
+    stages {
+        stage ('Build Docker Container') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: "$DOCKER_CREDENTIALS_ID", passwordVariable: 'ARTIFACTORY_ID_KEY', usernameVariable: 'ARTIFACTORY_USER')]) {
+                        sh '''
+                            docker login -u $ARTIFACTORY_USER -p $ARTIFACTORY_ID_KEY https://artifactory-04.boschdevcloud.com/artifactory
+
+                            set -e
+                            cd .docker_build
+
+                            ./build.sh
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage ('Push Docker Container') {
+            steps {
+                script {
+                    sh '''
+                        set -e
+                        cd .docker_build
+
+                        ./push.sh
+                    '''
+                }
+            }
+        }
+    }
+}

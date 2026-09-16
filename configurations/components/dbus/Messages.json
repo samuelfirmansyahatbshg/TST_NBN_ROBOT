@@ -1,0 +1,56 @@
+[
+    {
+        "name": "IABO_REFRESH_LED_STATE",
+        "Identifier": "0x3023",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "IABO_SET_BLINKING_MODE",
+        "Identifier": "0x3020",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "IABO_SET_BUZZER_MODES",
+        "Identifier": "0x3040",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "IABO_SET_LED_MATRIX_STATE",
+        "Identifier": "0x3021",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "IABO_SET_LED_SINGLE_STATE",
+        "Identifier": "0x3022",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "IABO_START_BUZZER_SEQUENCE",
+        "Identifier": "0x3041",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "SMM_PUBLIC_DATA_NOTIFICATION",
+        "Identifier": "0x1f32",
+        "Processor": "0xa",
+        "Submodule": "0xd"
+    },
+    {
+        "name": "RESET_IABO",
+        "Identifier": "0xfd00",
+        "Processor": "0x2",
+        "Submodule": "0x1"
+    },
+    {
+        "name": "RESET_CPM",
+        "Identifier": "0xfd00",
+        "Processor": "0x1",
+        "Submodule": "0x0"
+    }
+]

@@ -1,0 +1,239 @@
+pipeline {
+    agent none
+    options {
+        timestamps ()
+        parallelsAlwaysFailFast()
+    }
+    stages {
+        stage ('Clean workspace') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/clean_workspace.groovy'
+                }
+            }
+        }
+        stage('Evaluate Trigger') {
+            steps {
+                // Intensity
+                script {
+                    load '.jenkins/subroutines/self_detection.groovy'
+                }
+            }
+        }
+        // Start environment installation
+        stage ('Environment Installation') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/venv_installation.groovy'
+                }
+            }
+        }
+        stage('Parallel analysis and harvesting') {
+            parallel {
+                stage('Code analysis') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/code_analysis.groovy'
+                        }
+                    }
+                }
+                stage ('Documentation analysis') {
+                    steps {
+                        script {
+                            if (pDevicesUnderTestTable[pDeviceUnderTest]["features"]["documentation_linkage_validation"]) {
+                                println("Documentation linkage validation")
+                                powershell "poetry run req-val validate-documentation-linkage"
+                            }
+                        }
+                    }
+                }
+                stage ('Collection Analysis') {
+                    steps {
+                        script {
+                            // Configuration Relocation
+                            powershell """
+                                Copy-Item ${pTestConfigurationBasicDeviceUnderTestSource} -Destination ${pTestConfigurationBasicDeviceUnderTestDestination}
+                                Copy-Item ${pTestConfigurationBasicStatusSource} -Destination ${pTestConfigurationBasicStatusDestination}
+                                Copy-Item ${pTestConfigurationBasicIntensitySource} -Destination ${pTestConfigurationBasicIntensityDestination}
+                                Copy-Item ${pTestConfigurationBasicTestTypeSource} -Destination ${pTestConfigurationBasicTestTypeDestination}
+                                Copy-Item ${pTestConfigurationBasicRequirementSourceSource} -Destination ${pTestConfigurationBasicRequirementSourceDestination}
+                                Copy-Item configurations//equipment//COLLECTION_ANALYSIS.ini -Destination ${pTestConfigurationEquipmentDestination}
+                            """
+                            // Collection Session
+                            powershell """
+                                poetry run `
+                                pytest `
+                                -qq `
+                                --collect-only `
+                                tests
+                            """
+                            println "Remove Collection analysis logs"
+                            // Log Cleanup
+                            powershell """
+                                Remove-Item results/* -Recurse
+                            """
+                        }
+                    }
+                }
+                stage ('Artifact Harvesting') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/artifact_harvesting.groovy'
+                        }
+                    }
+                }
+            }
+        }
+        stage ('Testing') {
+            steps {
+                script {
+                    lock(quantity: 1, resource: pResource) {
+                        withCredentials([usernamePassword(credentialsId: pProjectSpecificTable["auth_sql"]["credentials_id"], passwordVariable: 'HOST_PSW', usernameVariable: 'HOST_USER')]) {
+                            // Configuration Relocation
+                            powershell """
+                                Copy-Item ${pTestConfigurationBasicDeviceUnderTestSource} -Destination ${pTestConfigurationBasicDeviceUnderTestDestination}
+                                Copy-Item ${pTestConfigurationBasicStatusSource} -Destination ${pTestConfigurationBasicStatusDestination}
+                                Copy-Item ${pTestConfigurationBasicIntensitySource} -Destination ${pTestConfigurationBasicIntensityDestination}
+                                Copy-Item ${pTestConfigurationBasicTestTypeSource} -Destination ${pTestConfigurationBasicTestTypeDestination}
+                                Copy-Item ${pTestConfigurationBasicRequirementSourceSource} -Destination ${pTestConfigurationBasicRequirementSourceDestination}
+                                Copy-Item ${pTestConfigurationEquipmentSource} -Destination ${pTestConfigurationEquipmentDestination}
+                            """
+                            if (pAgentMode) {
+                                // Agent Session
+                                powershell '''
+                                    Set-Item -Path env:HOST_USER -Value '${HOST_USER}'
+                                    Set-Item -Path env:HOST_PSW -Value '${HOST_PSW}'
+                                    poetry run `
+                                    Q_auto `
+                                    $Env:pBuildInfoName `
+                                    $Env:pBuildInfoNumber `
+                                    $Env:pTimeBudget `
+                                    -v `
+                                    --log-cli-level=$Env:pLoggingLevel `
+                                    --log-file-level=$Env:pLogFileLevel `
+                                    --tb=long
+                                '''
+                            }
+                            else {
+                                 // Testing Session
+                                 powershell """
+                                     Set-Item -Path env:HOST_USER -Value '${HOST_USER}'
+                                     Set-Item -Path env:HOST_PSW -Value '${HOST_PSW}'
+                                     poetry run `
+                                     pytest `
+                                     -v `
+                                     --log-cli-level=${pLoggingLevel} `
+                                     --log-file-level=${pLogFileLevel} `
+                                     --tb=long `
+                                     --junitxml=results\\pytest.xml `
+                                     ${pTests}
+                                 """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                // exec opional individual postprocessing
+                load '.jenkins/subroutines/individual_postprocessing.groovy'
+            }
+            script {
+                // Publish results (Jenkins)
+                junit 'results/pytest.xml'
+                if (pBranch == "PLAYGROUND") {
+                    archiveArtifacts allowEmptyArchive: false, artifacts: 'results.tar.gz', caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+                    currentBuild.displayName = env.BUILD_NUMBER
+                }
+                if (pBranch == "DEVELOP" || pBranch == "MASTER") {
+                    currentBuild.displayName = env.BUILD_NUMBER
+                    // Collect info for artifactory upload
+                    pArtifactoryHost = pArtifactoryTable["host"]
+                    env.pArtifactoryHost = pArtifactoryHost
+                    pArtifactoryUser = pArtifactoryTable["user"]
+                    env.pArtifactoryUser = pArtifactoryUser
+                    pCredentialsId = pArtifactoryTable["credentials_id"]
+                    pArtifactoryPath = pArtifactoryTable["repository"] + '/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/'
+                    env.pArtifactoryPath = pArtifactoryPath
+                    withCredentials([string(credentialsId: pCredentialsId, variable: 'token')]) {
+                        pJfrogPath = WORKSPACE + "\\.venv\\Lib\\site-packages\\artifact_harvester\\cli\\jfrog.exe"
+                        env.pJfrogPath = pJfrogPath
+                        env.JFROG_CLI_OFFER_CONFIG = false
+                        // Collect environment variables (Artifactory)
+                        env.environmentCollectCommand = env.pJfrogPath + ' rt bce ' + env.pBuildInfoName + ' ' + env.pBuildInfoNumber + ' 2>&1 | %{"$_"}'
+                        powershell ''' echo Executed: $Env:environmentCollectCommand '''
+                        powershell env.environmentCollectCommand
+
+                        // Collect git info's (Artifactory)
+                        env.gitCollectCommand = env.pJfrogPath + ' rt bag ' + env.pBuildInfoName + ' ' + env.pBuildInfoNumber + ' 2>&1 | %{"$_"}'
+                        powershell ''' echo Executed: $Env:gitCollectCommand '''
+                        powershell env.gitCollectCommand
+
+                        // Upload Artifact
+                        pUploadCommand = env.pJfrogPath + " rt u --build-name=" + pBuildInfoName + " --build-number=" + pBuildInfoNumber +
+                            " --url=" + pArtifactoryHost + " --user=" + pArtifactoryUser + " --password=" + token
+
+                        // Add log rotation for develop jobs
+                        if (pBranch == "DEVELOP") {
+                            pUploadCommand += " --target-props=\"RetentionPeriod=30\""
+                        }
+                        pUploadCommand += " results.tar.gz " + pArtifactoryPath + " 2>&1 | %{\"\$_\"}"
+                        println "Executed: " + pUploadCommand
+                        powershell pUploadCommand
+
+                        if (pBranch == "MASTER") {
+                            currentBuild.displayName = params.TAG
+                            // Publish build (Artifactory)
+                            env.publishBuildCommand = env.pJfrogPath + ' rt bp --url=' + env.pArtifactoryHost + ' --password=' + env.token + ' --user=' + env.pArtifactoryUser +
+                            ' --build-url=' + env.BUILD_URL + ' ' + env.pBuildInfoName + ' ' + env.pBuildInfoNumber + ' 2>&1 | %{"$_"}'
+                            powershell ''' echo Executed: $Env:publishBuildCommand '''
+                            powershell env.publishBuildCommand
+
+                            // Handle documentation
+                            pLandingPageEntry = params.TAG + "-" + pDeviceUnderTest
+                            powershell """
+                                poetry run sphinx-build -b html docs/Source docs/Build/${pLandingPageEntry} 2> output.err
+                                poetry run req-val validate-documentation-build output.err
+                                git checkout master
+                                python docs/generate_landing_page.py
+                                git add docs/*
+                                git commit -m ${params.TAG}
+                                git push
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        failure {
+            script {
+                pNotificationTable = pDevicesUnderTestTable[pDeviceUnderTest]["notification"]
+                println pNotificationTable
+                env.pEmail = ""
+                if (pNotificationTable.containsKey(env.pIntensity)) {
+                    if ((env.pStatus in pNotificationTable[env.pIntensity]["STATUS"]) && (env.pTestType in pNotificationTable[env.pIntensity]["TEST_TYPE"]) && (pNotificationTable[env.pIntensity]["RECEIVER"].size() != 0)) {
+                        pNotificationTable[env.pIntensity]["RECEIVER"].each { email ->
+                            env.pEmail = pEmail + email
+                            if (pNotificationTable[env.pIntensity]["RECEIVER"][pNotificationTable[env.pIntensity]["RECEIVER"].size() - 1] != email) {
+                                env.pEmail = pEmail + ', '
+                            }
+                        }
+                        println env.pEmail
+                        emailext body: '''${SCRIPT, template="groovy-html.template"}''',
+                        mimeType: 'text/html',
+                        subject: "Test - ${pDeviceUnderTest} - ${pBranch}",
+                        to: "${pEmail}",
+                        replyTo: "${pEmail}",
+                        recipientProviders: [[$class: 'CulpritsRecipientProvider']]
+                    }
+                }
+                else {
+                    println "No Email send due to not matching Intensity or Status"
+                }
+            }
+        }
+    }
+}

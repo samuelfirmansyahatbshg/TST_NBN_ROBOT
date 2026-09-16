@@ -1,0 +1,69 @@
+[project]
+name = "TST_NBN_ROBOT"
+requires-python = ">=3.13.1, <3.14"
+version = "0.0.1"  # field required by poetry but not used by TST projects
+description = "Test Robot"
+authors = [{ name = "Istvan Nemeth (OVRCE) <istvan.nemeth@bshg.com>"}]
+license = "Proprietary"
+
+[tool.poetry]
+# TODO Fill out my project information
+package-mode = false
+
+[tool.tst-template]
+version = "2024.2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.13.1, <3.14"
+artifact-harvester = "^10.1"
+mason-base = "^138.2"
+mason_home_appliance = "^59.3"
+test-abstraction-layer = "^0.3.2"
+cffi = ">=1.17.1"     
+lxml = ">=6.0"
+contourpy = ">=1.3"
+kiwisolver = ">=1.5"
+tokenizers = ">=0.23"
+
+[tool.poetry.group.dev.dependencies]
+amunra-sphinx-theme = "^0.2"
+flake8 = "^6.1.0"
+flake8-pyproject = "^1.2.3"
+isort = "^5.10.1"
+# req-val = "^1.6.1"
+sphinx = "^7.2.6"
+
+[[tool.poetry.source]]
+name = "pypi-virtual"
+url = "https://artifactory-04.boschdevcloud.com/artifactory/api/pypi/pypi-virtual/simple"
+priority = "supplemental"
+
+
+[[tool.poetry.source]]
+name = "ed-vs-framework-pypi-develop"
+url = "https://artifactory-04.boschdevcloud.com/artifactory/api/pypi/ed-vs-framework-pypi-develop/simple"
+priority = "supplemental"
+
+[tool.flake8]
+max-line-length = 120
+ignore = ["E202", "E241", "E501", "E701", "W504"]
+statistics = true
+exclude = [".git", ".idea", ".pytest_cache", "__pycache__", "docs", "old", "build", "dist", "venv", ".venv"]
+
+[tool.isort]
+profile = "google"
+line_length = 200
+known_third_party = "pytest"
+known_first_party = [
+    "mason_base", "mason_home_appliance", "mason_home_appliance_dishwasher", "mason_home_appliance_oven",
+    "mason_home_appliance_cooktop", "mason_home_appliance_cookerhood", "mason_home_appliance_fridge",
+    "mason_home_appliance_coffeemaker", "mason_home_appliance_cookprocessor", "mason_home_appliance_laundry",
+    "bsh_logging"
+]
+known_local_folder = ["configurations", "tests"]
+lines_after_imports = 2
+extend_skip = [".venv", "conftest.py"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

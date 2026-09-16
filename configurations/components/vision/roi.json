@@ -1,0 +1,79 @@
+[
+    {
+        "Bottom": 443,
+        "ID": "general__main_menu",
+        "Left": 676,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 957,
+        "Top": 267
+    },
+    {
+        "Bottom": 541,
+        "ID": "general__complete_display",
+        "Left": 631,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 997,
+        "Top": 173
+    },
+    {
+        "Bottom": 321,
+        "ID": "general__headline",
+        "Left": 650,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 976,
+        "Top": 196
+    },
+    {
+        "Bottom": 451,
+        "ID": "general__middle_list",
+        "Left": 631,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 997,
+        "Top": 261
+    },
+    {
+        "Bottom": 780,
+        "ID": "display_roi__none",
+        "Left": 0,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 1480,
+        "Top": 0
+    },
+    {
+        "Bottom": 311,
+        "ID": "microwave_mode__headline",
+        "Left": 706,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 949,
+        "Top": 238
+    },
+    {
+        "Bottom": 458,
+        "ID": "microwave_mode__notification_text_interruption",
+        "Left": 646,
+        "MeasuredShape": [
+            1480,
+            780
+        ],
+        "Right": 1003,
+        "Top": 332
+    }
+]

@@ -1,0 +1,100 @@
+pipeline {
+    agent none
+    options {
+        timestamps ()
+        parallelsAlwaysFailFast()
+    }
+    stages {
+        stage ('Clean workspace') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/clean_workspace.groovy'
+                }
+            }
+        }
+        stage ('Assignments') {
+            steps {
+                 // Prepare Mason version and os information
+                script {
+                    load '.jenkins/subroutines/check_os.groovy'
+                }
+                // Branch
+                script {
+                    switch (JOB_NAME) {
+                        case ~/.*[\\\/]PULL_REQUEST_CHECKER.*/:
+                            pBranch = "PULL_REQUEST_CHECKER"
+                        default:
+                            error("Undefined trigger type!")
+                    }
+                    println "Branch: " + pBranch
+                    env.pBranch = pBranch
+                }
+            }
+        }
+        // Start environment installation
+        stage ('Environment Installation') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/venv_installation.groovy'
+                }
+            }
+        }
+        stage('Parallel code and collection analysis') {
+            parallel {
+                stage('Code analysis') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/code_analysis.groovy'
+                        }
+                    }
+                }
+                stage ('Collection Analysis') {
+                    steps {
+                        script {
+                            pPipelineInfo = readJSON file: '.jenkins/pipeline.json', returnPojo: true
+                            pDevicesUnderTestTable = pPipelineInfo["variant_specific"]
+                            pDevicesUnderTestTable.each { device_under_test, item ->
+                                // Assignments
+                                println("Device Under Test: " + device_under_test)
+                                source = "configurations/basic/devices_under_test/" + device_under_test + ".ini"
+                                println("Source: " + source)
+                                destination = "BASIC_DEVICE_UNDER_TEST_" + device_under_test + ".ini"
+                                println("Destination: " + destination)
+                                result_file = "results/" + device_under_test + ".xml"
+                                println("Result File: " + result_file)
+
+                                // Configuration Relocation
+                                powershell """
+                                    Copy-Item ${source} -Destination ${destination}
+                                    Copy-Item configurations//equipment//COLLECTION_ANALYSIS.ini -Destination COLLECTION_ANALYSIS.ini
+                                """
+                                // Collection Session
+                                powershell """
+                                    poetry run `
+                                    pytest `
+                                    -qq `
+                                    --collect-only `
+                                    tests
+                                """
+                                // Configuration Cleanup
+                                powershell """
+                                    Remove-Item -path ${destination}
+                                    Remove-Item -path COLLECTION_ANALYSIS.ini
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                // Publish results (Jenkins)
+                junit testResults: 'results/*.xml', allowEmptyResults: true
+                deleteDir()
+            }
+        }
+    }
+}

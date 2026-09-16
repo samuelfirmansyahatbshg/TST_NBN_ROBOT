@@ -1,0 +1,57 @@
+{ "secret_info" : [
+
+    {"secret_name" : "HCA",
+    "secret_data" : {"user" : "hc-mason-val1@mailinator.com","password" : "DEC7D4C08286868296"}},
+
+    {"secret_name" : "FDS",
+    "secret_data" : {"user" : "ped",
+                      "password" : "EDE38087FFC786E7E6FCC0CCCBFBCAFAFCA18DBA8097F0A989A9A7FBA3FDACAABA97A38291AE84EEE59CBE",
+                      "http_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080",
+                      "https_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080"}},
+
+    {"secret_name" : "FDS_VSP2",
+    "secret_data" : {"user" : "RBG-GED-VSP2",
+                      "password" : "9B83C1D0CB81E4C680EBEDF6CD8ECFF9F2AFF1B3B5A5808BA09C9EACA581FABCFCE4A190B197AC9C919EE1",
+                      "http_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080",
+                      "https_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080"}},
+
+    {"secret_name" : "HCA_TOKEN",
+    "secret_data" :  {"client_id" : "0E811A6F54A7B3A59BC6CDCA8667372E539A9ECBD7640193663A807B844A9A49",
+                      "client_secret" : "011A8833E0EF93EB8F3FC65909F1D31861049BE9CE860155836077384AC2648E",
+                      "scope" : "WriteOrigApi ReadOrigApi IdentifyAppliance Monitor" }},
+
+    {"secret_name" : "PROXY",
+    "secret_data" :  {"proxy": "rb-proxy-de.bsh.corp.bshg.com:8080",
+                      "user": "RBG-GED-VSP-CI01",
+                      "password" : "FCD9DCC2DFD1E5C5C08888"}},
+
+
+    {"secret_name" : "BIN_TOKEN",
+    "secret_data" :  {"user": "rsg6re@bosch.com", "password": "CCDDE7DFD7F3C1C3F8D2F8C2F4D6F88DF2BA8CF28EBE84BE889C84FC98A1A58B9DE2A1A49E9CA59086E99BB189B1ECEC858EB3A6B5D6969F84D891A1BA8081B4"}},
+
+    {"secret_name" : "FW-RELEASE",
+    "secret_data" :  {"user" : "RBG-GED-VSP-CI01","password" : "FCD9DCC2DFD1E5C5C08888"}},
+
+    {"secret_name" : "KEYCLOAK",
+    "secret_data" :  {"user" : "istvan.nemeth","password" : "E9D9DFD1C0DDDED386"}},
+
+    {"secret_name" : "BTIA_1",
+    "secret_data" :  {"ssid" : "BTIA_NEI1RE","password" : "C289D6DAC9D2D980CFDCDADF"}},
+
+    {"secret_name" : "BTIA_2",
+    "secret_data" :  {"ssid" : "BTIA_NEI1RE_2","password" : "96D2DFD9D9D0C1838FD2C98B"}},
+
+    {"secret_name" : "BTIA_3",
+    "secret_data" :  {"ssid" : "BTIA_NEI1RE_3","password" : "D9FAC980F8CCC484E7EBC0E8"}},
+
+	{"secret_name" : "FDS_S3",
+    "secret_data" : {"access_key" : "asdf", "password" : "CEC3D5D4D4DCDFDD"}},
+
+    {"secret_name" : "FDS_INSTANT",
+    "secret_data" : {"user" : "fds-api-user",
+                      "password" : "C9D4C29FD2C4DC9BC7D9CAC9CCD3CFDA",
+                      "http_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080",
+                      "https_proxy" : "rb-proxy-de.bsh.corp.bshg.com:8080"}}
+]
+}
+

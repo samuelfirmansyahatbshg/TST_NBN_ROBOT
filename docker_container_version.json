@@ -1,0 +1,6 @@
+{
+  "image_name": "artifactory-04.boschdevcloud.com/devops-ccm-docker-develop/bsh/dev-mason",
+  "template_for_custom_image_name": "artifactory-04.boschdevcloud.com/devops-ccm-docker-develop/bsh/dev-mason-projects/tst-myprj",
+  "image_version": "latest",
+  "docker_credential_id": "TODO ID of credentials in jenkins"
+}

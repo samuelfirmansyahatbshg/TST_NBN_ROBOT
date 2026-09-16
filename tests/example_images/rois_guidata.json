@@ -1,0 +1,5 @@
+{
+    "default_save_location": "L:/Git/TST_mason-acceptance-tests/tests/test_vision_sw/text/bird/hard_backgrounds_contains/example_images",
+    "display_roi_default": "screen_roi",
+    "display_roi_dict": {
+        

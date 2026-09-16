@@ -1,0 +1,86 @@
+pipeline {
+    agent {
+        docker {
+            image "$USED_IMAGE"
+            reuseNode true
+            alwaysPull true
+            label "${params.NODE_LABEL}"
+            args  "--privileged --group-add audio --group-add users --group-add sudo --network host -v /dev:/dev -v /etc/timezone:/etc/timezone"
+            registryUrl 'https://artifactory-04.boschdevcloud.com/artifactory'
+            registryCredentialsId "$DOCKER_CREDENTIALS_ID"
+        }
+    }
+    options {
+        timestamps ()
+        parallelsAlwaysFailFast()
+    }
+    stages {
+        stage ('Clean workspace') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/clean_workspace.groovy'
+                }
+            }
+        }
+        // Start environment installation
+        stage ('Environment Installation') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/venv_installation.groovy'
+                }
+            }
+        }
+        stage('Parallel code and collection analysis') {
+            parallel {
+                stage('Code analysis') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/code_analysis.groovy'
+                        }
+                    }
+                }
+                stage ('Collection Analysis') {
+                    steps {
+                        script {
+                            pPipelineInfo = readJSON file: '.jenkins/pipeline.json', returnPojo: true
+                            pDevicesUnderTestTable = pPipelineInfo["variant_specific"]
+                            pDevicesUnderTestTable.each { device_under_test, item ->
+                                // Assignments
+                                println("Device Under Test: " + device_under_test)
+                                source = "configurations/basic/devices_under_test/" + device_under_test + ".ini"
+                                println("Source: " + source)
+                                destination = "BASIC_DEVICE_UNDER_TEST_" + device_under_test + ".ini"
+                                println("Destination: " + destination)
+                                result_file = "results/" + device_under_test + ".xml"
+                                println("Result File: " + result_file)
+
+                                sh """
+                                    cp ${source} ${destination}
+                                    cp configurations/equipment/COLLECTION_ANALYSIS.ini COLLECTION_ANALYSIS.ini
+                                """
+                                sh """
+                                    set +x
+                                    source /opt/.virtualenvs/mason/bin/activate
+                                    pytest -qq --junitxml=${result_file} --collect-only tests
+                                """
+                                sh """
+                                    rm ${destination}
+                                    rm COLLECTION_ANALYSIS.ini
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                // Publish results (Jenkins)
+                junit testResults: 'results/*.xml', allowEmptyResults: true
+                deleteDir()
+            }
+        }
+    }
+}

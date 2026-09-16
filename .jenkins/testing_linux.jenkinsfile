@@ -1,0 +1,237 @@
+pipeline {
+    agent {
+        docker {
+            image "$USED_IMAGE"
+            reuseNode true
+            alwaysPull true
+            label "${params.NODE_LABEL}"
+            args  "--privileged --group-add audio --group-add users --group-add sudo --network host -v /dev:/dev -v /etc/timezone:/etc/timezone"
+            registryUrl 'https://artifactory-04.boschdevcloud.com/artifactory'
+            registryCredentialsId "$DOCKER_CREDENTIALS_ID"
+        }
+    }
+    options {
+        timestamps ()
+        parallelsAlwaysFailFast()
+    }
+    stages {
+        stage ('Clean workspace') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/clean_workspace.groovy'
+                }
+            }
+        }
+        stage('Evaluate Trigger') {
+            steps {
+                script {
+                    load '.jenkins/subroutines/self_detection.groovy'
+                }
+            }
+        }
+                // Start environment installation
+        stage ('Environment Installation') {
+            steps {
+                script {
+                    // Set timezone from host
+                    sh '''
+                        set +x
+                        sudo ln -snf /usr/share/zoneinfo/$(cat /etc/timezone) /etc/localtime
+                    '''
+                    load '.jenkins/subroutines/venv_installation.groovy'
+                }
+            }
+        }
+        stage('Parallel analysis and harvesting') {
+            parallel {
+                stage('Code analysis') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/code_analysis.groovy'
+                        }
+                    }
+                }
+                stage ('Documentation analysis') {
+                    steps {
+                        script {
+                            if (pDevicesUnderTestTable[pDeviceUnderTest]["features"]["documentation_linkage_validation"]) {
+                                println("Documentation linkage validation")
+                                sh """
+                                    set +x
+                                    source /opt/.virtualenvs/mason/bin/activate
+                                    req-val validate-documentation-linkage
+                                """
+                            }
+                        }
+                    }
+                }
+                stage ('Collection Analysis') {
+                    steps {
+                        script {
+                            sh """
+                               cp ${pTestConfigurationBasicDeviceUnderTestSource} ${pTestConfigurationBasicDeviceUnderTestDestination}
+                               cp ${pTestConfigurationBasicStatusSource} ${pTestConfigurationBasicStatusDestination}
+                               cp ${pTestConfigurationBasicIntensitySource} ${pTestConfigurationBasicIntensityDestination}
+                               cp ${pTestConfigurationBasicTestTypeSource} ${pTestConfigurationBasicTestTypeDestination}
+                               cp ${pTestConfigurationBasicRequirementSourceSource} ${pTestConfigurationBasicRequirementSourceDestination}
+                               cp configurations/equipment/COLLECTION_ANALYSIS.ini ${pTestConfigurationEquipmentDestination}
+                            """
+                            sh """
+                                set +x
+                                source /opt/.virtualenvs/mason/bin/activate
+                                pytest -qq --collect-only tests
+                            """
+                            // Log Cleanup
+                            sh "rm -r results/*"
+                        }
+                    }
+                }
+                stage ('Artifact Harvesting') {
+                    steps {
+                        script {
+                            load '.jenkins/subroutines/artifact_harvesting.groovy'
+                        }
+                    }
+                }
+            }
+        }
+        stage ('Testing') {
+            steps {
+                script {
+                    lock(quantity: 1, resource: pResource) {
+                        withCredentials([usernamePassword(credentialsId: pProjectSpecificTable["auth_sql"]["credentials_id"], passwordVariable: 'HOST_PSW', usernameVariable: 'HOST_USER')]) {
+                            sh """
+                                cp ${pTestConfigurationBasicDeviceUnderTestSource} ${pTestConfigurationBasicDeviceUnderTestDestination}
+                                cp ${pTestConfigurationBasicStatusSource} ${pTestConfigurationBasicStatusDestination}
+                                cp ${pTestConfigurationBasicIntensitySource} ${pTestConfigurationBasicIntensityDestination}
+                                cp ${pTestConfigurationBasicTestTypeSource} ${pTestConfigurationBasicTestTypeDestination}
+                                cp ${pTestConfigurationBasicRequirementSourceSource} ${pTestConfigurationBasicRequirementSourceDestination}
+                                cp ${pTestConfigurationEquipmentSource} ${pTestConfigurationEquipmentDestination}
+                            """
+                            if (pAgentMode) {
+                                sh """
+                                    export HOST_USER
+                                    export HOST_PSW
+                                    source /opt/.virtualenvs/mason/bin/activate
+                                    ./mason-env-setup.sh Q_auto $pBuildInfoName $pBuildInfoNumber $pTimeBudget --log-cli-level=${pLoggingLevel} --log-file-level=${pLogFileLevel} --tb=long
+                                """
+                            }
+                            else {
+                                sh """
+                                    export HOST_USER
+                                    export HOST_PSW
+                                    source /opt/.virtualenvs/mason/bin/activate
+                                    ./mason-env-setup.sh pytest -v --log-cli-level=${pLoggingLevel} --log-file-level=${pLogFileLevel} --tb=long --junitxml=results/pytest.xml ${pTests}
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script{
+                // exec opional individual postprocessing
+                load '.jenkins/subroutines/individual_postprocessing.groovy'
+            }
+            script {
+                // Publish results (Jenkins)
+                junit 'results/pytest.xml'
+                if (pBranch == "PLAYGROUND") {
+                    archiveArtifacts allowEmptyArchive: false, artifacts: 'results.tar.gz', caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+                    currentBuild.displayName = env.BUILD_NUMBER
+                }
+                if (pBranch == "DEVELOP" || pBranch == "MASTER") {
+                    currentBuild.displayName = env.BUILD_NUMBER
+                    // Collect info for artifactory upload
+                    pArtifactoryHost = pArtifactoryTable["host"]
+                    env.pArtifactoryHost = pArtifactoryHost
+                    pArtifactoryUser = pArtifactoryTable["user"]
+                    env.pArtifactoryUser = pArtifactoryUser
+                    pCredentialsId = pArtifactoryTable["credentials_id"]
+                    pArtifactoryPath = pArtifactoryTable["repository"] + '/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/'
+                    env.pArtifactoryPath = pArtifactoryPath
+                    withCredentials([string(credentialsId: pCredentialsId, variable: 'token')]) {
+                        if(env.OS_Info == "linux") {
+                            // Collect environment variables (Artifactory)
+                            sh "jfrog rt bce ${pBuildInfoName} ${pBuildInfoNumber}"
+
+                            // Collect git info's (Artifactory)
+                            sh "jfrog rt bag ${pBuildInfoName} ${pBuildInfoNumber}"
+
+                            // Upload Artifact
+                            if (pBranch == "DEVELOP") {
+                                // With log rotation for develop jobs
+                                sh 'jfrog rt u results.tar.gz ${pArtifactoryPath} --build-name=${pBuildInfoName} --build-number=${pBuildInfoNumber} --url=${pArtifactoryHost} --user=${pArtifactoryUser} --password=${token} --target-props="RetentionPeriod=30"'
+                            }
+                            else {
+                                sh 'jfrog rt u results.tar.gz ${pArtifactoryPath} --build-name=${pBuildInfoName} --build-number=${pBuildInfoNumber} --url=${pArtifactoryHost} --user=${pArtifactoryUser} --password=${token}'
+                            }
+                        } else {
+                            // os = raspi
+                            if (pBranch == "DEVELOP") {
+                                env.pUploadTarget = "${pArtifactoryHost}${pArtifactoryPath}results.tar.gz;RetentionPeriod=30"
+                            }
+                            else {
+                                env.pUploadTarget = "${pArtifactoryHost}${pArtifactoryPath}results.tar.gz"
+                            }
+                            sh 'curl -u ${pArtifactoryUser}:${token} -T results.tar.gz -X PUT ${pUploadTarget}'
+                        }
+                        echo "Upload results.tar.gz to artifactory: ${pArtifactoryHost}${pArtifactoryPath}results.tar.gz"
+                        if (pBranch == "MASTER") {
+                            currentBuild.displayName = params.TAG
+                            if(env.OS_Info == "linux") {
+                                // Publish build (Artifactory)
+                                sh 'jfrog rt bp ${pBuildInfoName} ${pBuildInfoNumber} --url=${pArtifactoryHost} --build-url=\"${BUILD_URL}\" --user=${pArtifactoryUser} --password=${token}'
+                            } else {
+                                // os = raspi
+                                println "Publish build is not supported for raspi platform"
+                            }
+                            // Handle documentation
+                            pLandingPageEntry = params.TAG + "-" + pDeviceUnderTest
+                            sh """
+                                source /opt/.virtualenvs/mason/bin/activate
+                                sphinx-build -b html docs/Source docs/Build/${pLandingPageEntry} > output.err
+                                req-val validate-documentation-build output.err
+                                git checkout master
+                                python3 docs/generate_landing_page.py
+                                git add docs/*
+                                git commit -m ${params.TAG}
+                                git push
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        failure {
+            script {
+                pNotificationTable = pDevicesUnderTestTable[pDeviceUnderTest]["notification"]
+                println pNotificationTable
+                env.pEmail = ""
+                if (pNotificationTable.containsKey(env.pIntensity)) {
+                    if ((env.pStatus in pNotificationTable[env.pIntensity]["STATUS"]) && (env.pTestType in pNotificationTable[env.pIntensity]["TEST_TYPE"]) && (pNotificationTable[env.pIntensity]["RECEIVER"].size() != 0)) {
+                        pNotificationTable[env.pIntensity]["RECEIVER"].each { email ->
+                            env.pEmail = pEmail + email
+                            if (pNotificationTable[env.pIntensity]["RECEIVER"][pNotificationTable[env.pIntensity]["RECEIVER"].size() - 1] != email) {
+                                env.pEmail = pEmail + ', '
+                            }
+                        }
+                        println env.pEmail
+                        emailext body: '''${SCRIPT, template="groovy-html.template"}''',
+                        mimeType: 'text/html',
+                        subject: "Test - ${pDeviceUnderTest} - ${pBranch}",
+                        to: "${pEmail}",
+                        replyTo: "${pEmail}",
+                        recipientProviders: [[$class: 'CulpritsRecipientProvider']]
+                    }
+                }
+                else {
+                    println "No Email send due to not matching Intensity or Status"
+                }
+            }
+        }
+    }
+}

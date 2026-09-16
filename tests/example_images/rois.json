@@ -1,0 +1,123 @@
+[
+    {
+        "Bottom": 744,
+        "ID": "display_roi__none",
+        "Left": 0,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 1480,
+        "Top": 0
+    },
+    {
+        "Bottom": 661,
+        "ID": "display_roi__screen_roi",
+        "Left": 46,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 1327,
+        "Top": 99
+    },
+    {
+        "Bottom": 255,
+        "ID": "temp_1__exact",
+        "Left": 16,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 592,
+        "Top": 168
+    },
+    {
+        "Bottom": 273,
+        "ID": "temp_1__line",
+        "Left": 17,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 1402,
+        "Top": 165
+    },
+    {
+        "Bottom": 262,
+        "ID": "temp_1__scolagemento",
+        "Left": 13,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 820,
+        "Top": 165
+    },
+    {
+        "Bottom": 495,
+        "ID": "temp_2__first_exact",
+        "Left": 95,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 340,
+        "Top": 404
+    },
+    {
+        "Bottom": 497,
+        "ID": "temp_2__second_exact",
+        "Left": 598,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 849,
+        "Top": 411
+    },
+    {
+        "Bottom": 488,
+        "ID": "temp_2__third_exact",
+        "Left": 1107,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 1346,
+        "Top": 414
+    },
+    {
+        "Bottom": 601,
+        "ID": "temp_2__first_full",
+        "Left": 13,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 457,
+        "Top": 314
+    },
+    {
+        "Bottom": 596,
+        "ID": "temp_2__second_full",
+        "Left": 483,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 960,
+        "Top": 308
+    },
+    {
+        "Bottom": 593,
+        "ID": "temp_2__third_full",
+        "Left": 979,
+        "MeasuredShape": [
+            1480,
+            744
+        ],
+        "Right": 1455,
+        "Top": 306
+    }
+]

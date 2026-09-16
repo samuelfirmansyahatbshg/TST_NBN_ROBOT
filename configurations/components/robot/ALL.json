@@ -1,0 +1,26 @@
+{
+  "speed_base": 200.0,
+  "operating_level": 50.00,
+  "axes": {
+    "available": [
+      "stroke",
+      "sideways",
+      "lift"
+    ],
+    "logical_to_physical": {
+      "stroke": 0,
+      "sideways": 1,
+      "lift": 2
+    },
+    "lengths": {
+      "stroke": 100.0,
+      "sideways": 800.0,
+      "lift": 600.0
+    },
+    "type": {
+      "stroke": "RCP4",
+      "sideways": "RCP4",
+      "lift": "RCP4"
+    }
+}
+}
