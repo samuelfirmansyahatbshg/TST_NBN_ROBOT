@@ -85,6 +85,9 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# Version-suffixed virtualenvs (venv311, venv312, .venv310, ...)
+venv[0-9]*/
+.venv[0-9]*/
 
 # Spyder project settings
 .spyderproject
